@@ -1,0 +1,229 @@
+# ════════════════════════════════════════════════════════════════════
+# ARS_FULL v4.0 · Multi-Task Deep Learning · CD34+ Mobilization
+# Bursa Yüksek İhtisas EAH · n = 316 healthy allogeneic donors
+# ════════════════════════════════════════════════════════════════════
+# User-confirmed configuration choices (chat 19 May 2026):
+#   Q1 → baselines: XGBoost (A & B) + ridge + manuscript MLP replica
+#   Q2 → quantile band: 80% PI (P10–P90)
+#   Q3 → sensitivity: train parallel absolute-yield model (×10⁶ total)
+# ════════════════════════════════════════════════════════════════════
+
+run:
+  name:                  ars_v4_full
+  output_dir:            outputs
+  seed:                  42
+  device:                auto                # cuda > mps > cpu
+  num_workers:           0                   # macOS/Windows-safe
+
+# ── DATA ────────────────────────────────────────────────────────────
+data:
+  path:                  data/donor_data.xlsx
+  
+  # Primary targets
+  target_yield_col:      collected_cd34_cell_count       # ×10⁶/kg recipient (raw)
+  target_eff_derive:                                     # cd34_per_ml_product
+    formula:             "(collected_cd34_cell_count * patient_kg) / product_volume_total"
+    name:                cd34_per_ml_product
+  
+  # Sensitivity target (Q3)
+  sensitivity:
+    enabled:             true
+    target_absolute:                                      # ×10⁶ total
+      formula:           "collected_cd34_cell_count * patient_kg"
+      name:              cd34_absolute_total
+  
+  log_transform:         true                            # log1p for all three targets
+  
+  drop_cols:
+    - No
+    - Date_of_birth                                      # → derive age first
+    - alcohol_status_0_no_1_yes                          # near-zero variance
+    - pre_apheresis_neutrophil_cell_count                # r=0.992 with WBC (manuscript)
+    - "Unnamed: 20"                                      # empty column
+  
+  derive_age_from:       Date_of_birth                   # → age_years (float)
+  derive_age_ref_date:   "2026-05-19"                    # data freeze date
+  
+  vaccine_col_parse:
+    source_col:          covid19_vaccine_status_1_biontech_2_sinovac_3_turkovac
+    output_cols:
+      vacc_biontech:     contains_1                      # "1", "1-2", "1,2", "1-2-3"
+      vacc_sinovac:      contains_2
+      # turkovac (=3) skipped: n<5, manuscript reasoning
+
+# ── FEATURE FRAMEWORKS ──────────────────────────────────────────────
+features:
+  model_A:                                               # 15 features (pre-mobilization)
+    - age_years
+    - sex_male                                           # recoded 1=F→0, 2=M→1
+    - weight                                             # donor
+    - height                                             # donor
+    - bmi
+    - smoking_status_0_naiv_1_ex_smoker_2_smoker
+    - smoking_package_year
+    - patient_kg
+    - pre_apheresis_wbc_cell_count
+    - pre_apheresis_mononucleer_cell_count
+    - gcsf_procedure_count
+    - covid19_vaccine_status
+    - covid19_vaccine_how_many_times
+    - vacc_biontech
+    - vacc_sinovac
+  
+  model_B:                                               # 16 features (= A + pre-CD34)
+    - age_years
+    - sex_male
+    - weight
+    - height
+    - bmi
+    - smoking_status_0_naiv_1_ex_smoker_2_smoker
+    - smoking_package_year
+    - patient_kg
+    - pre_apheresis_wbc_cell_count
+    - pre_apheresis_mononucleer_cell_count
+    - pre_apheresis_cd34_cell_count_total_microliter     # ★ key addition
+    - gcsf_procedure_count
+    - covid19_vaccine_status
+    - covid19_vaccine_how_many_times
+    - vacc_biontech
+    - vacc_sinovac
+
+# ── CV SPLIT ────────────────────────────────────────────────────────
+split:
+  scheme:                repeated_stratified_kfold
+  n_splits:              5
+  n_repeats:             10                              # = 50 folds (manuscript parity)
+  stratify_by:           yield_quintile                  # log1p(y_yield) → 5 bins
+
+# ── PREPROCESSING (fold-internal) ───────────────────────────────────
+preprocess:
+  imputer:               iterative                       # IterativeImputer + BayesianRidge
+  imputer_max_iter:      10
+  scaler:                robust                          # RobustScaler (manuscript-parity)
+  ft_embedding_dim:      8                               # per-feature learnable embedding
+
+# ── MODEL ───────────────────────────────────────────────────────────
+model:
+  arch:                  tabresnet
+  trunk_dim:             64
+  n_resblocks:           3
+  resblock_expansion:    2                               # 64 → 128 → 64 in each block
+  dropout:               0.30
+  activation:            gelu
+  norm:                  layer                           # LayerNorm (not BN)
+  
+  heads:
+    yield:
+      hidden:            [32]
+      quantiles:         [0.10, 0.50, 0.90]              # ← Q2: 80% PI
+      target_transform:  log1p
+    efficiency:
+      hidden:            [32]
+      quantiles:         [0.10, 0.50, 0.90]
+      target_transform:  log1p
+
+# ── TRAINING ────────────────────────────────────────────────────────
+train:
+  optimizer:             adamw
+  lr:                    3.0e-4
+  weight_decay:          1.0e-2
+  
+  scheduler:             cosine_warm_restarts
+  cosine_t0:             20
+  cosine_t_mult:         2
+  cosine_eta_min:        1.0e-6
+  
+  batch_size:            16
+  max_epochs:            300
+  
+  early_stop:
+    metric:              val_total_loss
+    patience:            30
+    min_delta:           1.0e-4
+  
+  swa:
+    enabled:             true
+    start_epoch:         100
+    lr:                  1.0e-4
+  
+  mixup:
+    enabled:             true
+    alpha:               0.20
+  
+  loss:                                                  # multitask weighting
+    pinball_yield_w:     0.50
+    pinball_eff_w:       0.50
+    mse_p50_w:           0.05                            # anchor P50 to point estimate
+  
+  grad_clip:             1.0
+
+# ── ENSEMBLE ────────────────────────────────────────────────────────
+ensemble:
+  n_seeds:               5                               # 5 seeds × 5 folds × 10 repeats = 250 models
+  seeds:                 [42, 43, 44, 45, 46]
+  aggregate_method:      mean                            # mean of P50; std as model uncertainty
+
+# ── INFERENCE & CLINICAL OUTPUT ────────────────────────────────────
+inference:
+  target_doses:          [2.0, 3.0, 4.0, 5.0, 6.0, 8.0]  # ×10⁶/kg
+  pi_level:              0.80                            # Q2
+  min_volume_mL:         50                              # clip absurdly low
+  max_volume_mL:         800                             # clip absurdly high
+
+# ── EVALUATION ──────────────────────────────────────────────────────
+evaluation:
+  metrics:
+    regression:          [mae, rmse, r2, pinball_loss_p50,
+                          quantile_coverage_80, picp_80, mpiw_80]
+  binary_endpoint:
+    threshold:           5.0                             # suboptimal <5/kg (manuscript)
+    metrics:             [auroc, auprc, sens_at_spec_90, brier_score]
+  bland_altman:                                          # V_needed validation
+    enabled:             true
+    target_dose:         "actual_collected"              # use each donor's actual yield
+
+# ── BASELINES (Q1: full) ───────────────────────────────────────────
+baselines:
+  xgboost_A:
+    enabled:             true
+    n_estimators:        200
+    max_depth:           4
+    learning_rate:       0.05
+    subsample:           0.8
+    colsample_bytree:    0.8
+  xgboost_B:
+    enabled:             true
+    # same hyperparam, just different feature set
+  ridge:
+    enabled:             true
+    alpha:               1.0
+  manuscript_mlp_replica:
+    enabled:             true
+    description:         "PyTorch port of TensorFlow MLP from manuscript Section 2.5"
+    hidden:              [64, 32]
+    activation:          relu                            # paper used ReLU (not GELU)
+    batch_norm:          true                            # BN (not LN)
+    dropout:             0.30
+    l2:                  1.0e-4
+    optimizer:           adam                            # Adam (not AdamW)
+    lr:                  1.0e-3
+    early_stop_patience: 20
+
+# ── SHAP ────────────────────────────────────────────────────────────
+shap:
+  enabled:               true
+  background_samples:    100                             # ≤ n_train, BayesianRidge-imputed
+  test_samples:          all                             # full OOF stack
+  yield_head_explainer:  deep                            # DeepExplainer on P50 of yield_q
+  eff_head_explainer:    kernel                          # KernelExplainer on P50 of eff_q
+  xgboost_explainer:     tree                            # TreeExplainer (manuscript Limitation #6)
+  concordance_metric:    spearman                        # rank correlation across 3 methods
+
+# ── REPORT ──────────────────────────────────────────────────────────
+report:
+  paper_ready_figures:   true
+  dpi:                   300
+  formats:               [png, pdf]
+  color_palette:         "manuscript"                    # match existing figures
+  generate_markdown:     true
+  generate_csv:          true

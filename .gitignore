@@ -1,0 +1,44 @@
+# ── Patient data — NEVER commit (KVKK / ethics) ─────────────────────
+data/
+*.xlsx
+*.xls
+*.csv
+*.tsv
+examples/
+**/donor_*.json
+
+# ── Per-donor predictions, trained models, outputs ──────────────────
+outputs/
+outputs_smoke/
+*.npz
+*.joblib
+*.pkl
+*.pt
+*.pth
+*.ckpt
+
+# ── Manuscripts, figures with results, reports ──────────────────────
+*.docx
+*.pdf
+*.html
+paper.md
+docs/
+dist/
+tct_submission/
+figures_TCT_final/
+
+# ── Python / environment ────────────────────────────────────────────
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+.ipynb_checkpoints/
+
+# ── OS / editor cruft ───────────────────────────────────────────────
+.DS_Store
+.Rhistory
+*.log
+.idea/
+.vscode/
