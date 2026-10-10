@@ -1,11 +1,11 @@
 # Multi-task TabResNet for CD34+ mobilization prediction
 
-Analysis code for the manuscript **"Calibrated prediction of CD34+ yield and collection efficiency for allogeneic donor apheresis product-volume planning."**
+Analysis code for the manuscript **"Calibrated prediction of CD34+ yield and apheresis product CD34+ concentration for allogeneic donor collection planning"** (*Cytotherapy*, 2026).
 
 A multi-task tabular residual neural network (TabResNet) that jointly predicts, from pre-apheresis donor features:
 
 1. **CD34+ yield** (×10⁶ CD34+/kg recipient weight), and
-2. **Collection efficiency** (×10⁶ CD34+/mL apheresis product) — a recipient-weight–independent endpoint,
+2. **Product CD34+ concentration** (×10⁶ CD34+/mL apheresis product) — a recipient-weight–independent endpoint,
 
 each with **calibrated 80% prediction intervals** via quantile heads, and derives a **V_needed nomogram** that converts a donor's features and a target CD34+ dose into the required apheresis product volume with an explicit interval.
 
@@ -49,7 +49,7 @@ python run_pipeline.py --config configs/v4_config.yaml --mode report
 python run_pipeline.py --config configs/v4_config.yaml --mode predict --donor your_donor.json
 ```
 
-Inference returns, for each donor, the P10/P50/P90 of yield and efficiency, the binary ≥ 5 ×10⁶/kg risk flag, and a V_needed table (product volume to reach each target dose, with 80% intervals).
+Inference returns, for each donor, the P10/P50/P90 of yield and product CD34+ concentration, the binary ≥ 5 ×10⁶/kg risk flag, and a V_needed table (product volume to reach each target dose, with 80% intervals).
 
 An interactive Streamlit decision-support app (single-donor, batch, internal-validation, and external-validation tabs) is in `app/`:
 
