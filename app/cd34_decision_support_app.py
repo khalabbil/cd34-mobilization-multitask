@@ -149,14 +149,14 @@ st.sidebar.title("CD34+ Mobilization\nDecision Support")
 st.sidebar.markdown(
     """
 **Model**: multi-task TabResNet
-(yield + efficiency quantile heads)
+(yield + product-concentration quantile heads)
 
 **Cohort**: 316 healthy allogeneic donors
 (Bursa Yüksek İhtisas EAH)
 
 **Endpoints**
 - Yield: ×10⁶ CD34+/kg recipient
-- Efficiency: ×10⁶ CD34+/mL product
+- Product CD34+ concentration: ×10⁶/mL product
 
 **Dose thresholds**
 - ≥ 2 ×10⁶/kg — minimum acceptable
@@ -196,7 +196,7 @@ tab1, tab2, tab3, tab4 = st.tabs([
 with tab1:
     st.subheader("Single donor prediction")
     st.caption("Enter pre-apheresis donor features; the ensemble returns P10/P50/P90 "
-               "for yield and efficiency plus a V_needed volume nomogram.")
+               "for yield and product CD34+ concentration plus a V_needed volume nomogram.")
 
     c1, c2, c3 = st.columns(3)
     with c1:
@@ -245,7 +245,7 @@ with tab1:
 
         m1, m2, m3 = st.columns(3)
         m1.metric("Yield P50 (×10⁶/kg)", f"{yq[1]:.2f}", f"PI80 [{yq[0]:.2f}, {yq[2]:.2f}]")
-        m2.metric("Efficiency P50 (×10⁶/mL)", f"{eq[1]:.2f}", f"PI80 [{eq[0]:.2f}, {eq[2]:.2f}]")
+        m2.metric("Product conc. P50 (×10⁶/mL)", f"{eq[1]:.2f}", f"PI80 [{eq[0]:.2f}, {eq[2]:.2f}]")
         reach5 = "✅ YES (P10 ≥ 5)" if yq[0] >= 5 else (
                  "⚠️ likely" if yq[1] >= 5 else "❌ at risk")
         m3.metric("Reaches ≥ 5 ×10⁶/kg?", reach5)
@@ -269,8 +269,8 @@ with tab1:
         vol_df.columns = ["Target dose (×10⁶/kg)", "V median (mL)",
                           "V PI80 low (mL)", "V PI80 high (mL)"]
         st.dataframe(vol_df, width="stretch", hide_index=True)
-        st.caption("V(T) = T × recipient_kg / efficiency. Low/high bounds use the "
-                   "P90/P10 efficiency quantiles respectively.")
+        st.caption("V(T) = T × recipient_kg / product concentration. Low/high bounds use the "
+                   "P90/P10 product-concentration quantiles respectively.")
 
 
 # ── TAB 2 — BATCH PREDICTION ────────────────────────────────────────
@@ -334,7 +334,7 @@ with tab3:
     else:
         c1, c2, c3, c4 = st.columns(4)
         c1.metric("ARS yield R²", f"{gt['ars_yield_overall']['r2']:.3f}")
-        c2.metric("ARS efficiency R²", f"{gt['ars_eff_overall']['r2']:.3f}")
+        c2.metric("ARS product-conc. R²", f"{gt['ars_eff_overall']['r2']:.3f}")
         c3.metric("PICP-80 (yield)", f"{gt['picp_80']:.3f}")
         c4.metric("MPIW-80 (yield)", f"{gt['mpiw_80']:.2f}")
 
@@ -364,7 +364,7 @@ with tab3:
                                           f"Reliability — yield (Model {framework})"))
             with cc2:
                 st.pyplot(reliability_fig(oof["y_eff"], oof["ars_eff_q"], quantiles,
-                                          f"Reliability — efficiency (Model {framework})"))
+                                          f"Reliability — product concentration (Model {framework})"))
 
         if ba:
             st.markdown("##### V_needed Bland-Altman (internal cohort)")
@@ -418,8 +418,8 @@ with tab4:
                 rows = [
                     ["Yield R²",        m_yield["R2"],  gt_int["ars_yield_overall"]["r2"]],
                     ["Yield MAE",       m_yield["MAE"], gt_int["ars_yield_overall"]["mae"]],
-                    ["Efficiency R²",   m_eff["R2"],    gt_int["ars_eff_overall"]["r2"]],
-                    ["Efficiency MAE",  m_eff["MAE"],   gt_int["ars_eff_overall"]["mae"]],
+                    ["Product conc. R²",   m_eff["R2"],    gt_int["ars_eff_overall"]["r2"]],
+                    ["Product conc. MAE",  m_eff["MAE"],   gt_int["ars_eff_overall"]["mae"]],
                     ["PICP-80 yield",   picp_y,         gt_int["picp_80"]],
                     ["PICP-80 eff",     picp_e,         None],
                 ]
