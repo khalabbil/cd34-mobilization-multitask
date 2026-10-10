@@ -78,9 +78,33 @@ Single-centre, retrospective study; approved by the Ethics Committee of Bursa Y�
 
 ## Citation
 
-If you use this code, please cite the manuscript (citation to be completed upon publication):
+If you use the code, models, or methods in this repository, please cite:
 
-> Gözden HE, Orhan B, Alkış N. Calibrated prediction of CD34+ yield and collection efficiency for allogeneic donor apheresis product-volume planning. *Transplantation and Cellular Therapy.* (under review).
+Gözden HE, Orhan B, Alkış N. Calibrated prediction of CD34+ yield and apheresis product CD34+ concentration for allogeneic donor collection planning. Cytotherapy. 2026;103003. https://doi.org/10.1016/j.jcyt.2026.103003
+
+### BibTeX
+
+```bibtex
+
+@article{Gozden2026CD34,
+
+  author  = {Gözden, Hilmi Erdem and Orhan, Bedrettin and Alkış, Nihan},
+
+  title   = {Calibrated prediction of {CD34+} yield and apheresis product {CD34+} concentration for allogeneic donor collection planning},
+
+  journal = {Cytotherapy},
+
+  year    = {2026},
+
+  pages   = {103003},
+
+  doi     = {10.1016/j.jcyt.2026.103003},
+
+  url     = {https://doi.org/10.1016/j.jcyt.2026.103003}
+
+}
+
+```
 
 ## License
 
