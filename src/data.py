@@ -76,7 +76,7 @@ def load_and_prepare(cfg: dict) -> pd.DataFrame:
     yield_col = cfg["data"]["target_yield_col"]
     df["y_yield"] = df[yield_col].astype(float)
 
-    # Efficiency: ×10⁶ CD34 captured per mL of product
+    # Product CD34+ concentration: ×10⁶ CD34 captured per mL of product
     df["y_eff"] = (df[yield_col] * df["patient_kg"]) / df["product_volume_total"]
 
     # Sensitivity: absolute total CD34 (×10⁶) — Q3

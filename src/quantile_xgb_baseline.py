@@ -3,12 +3,12 @@ src/quantile_xgb_baseline.py
 ═══════════════════════════════════════════════════════════════════════
 P1 CRITICAL FIX (Stage 4 REVISE, Devil's Advocate finding):
 
-Single-task quantile-XGBoost efficiency and yield baselines, trained
+Single-task quantile-XGBoost product-concentration and yield baselines, trained
 with target-specific hyperparameter search, evaluated on the IDENTICAL
 50-fold CV scheme used by the multi-task ARS v4 model.
 
 This is the fair comparator for the multi-task model's calibrated PI80
-claim. Without it, the +73% efficiency R² gain reported in §3.3 of the
+claim. Without it, the +73% product-concentration R² gain reported in §3.3 of the
 v1 manuscript is presented against an un-tuned XGBoost using yield-model
 hyperparameters — Devil's Advocate's CRITICAL issue.
 

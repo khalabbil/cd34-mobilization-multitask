@@ -56,13 +56,13 @@ def generate_report(cfg: dict) -> None:
                 "RMSE": _rmse(y_yield, pred),
                 "R²":   _r2(y_yield, pred),
             })
-        # Efficiency table (XGB + ARS only — novel target)
+        # Product-concentration table (XGB + ARS only — novel target)
         for model_name, pred in [
             ("XGBoost",         d["xgb_eff"]),
             ("ARS v4 eff (P50)", ars_e),
         ]:
             rows.append({
-                "framework": fw, "target": "efficiency (×10⁶/mL)",
+                "framework": fw, "target": "product concentration (×10⁶/mL)",
                 "model": model_name,
                 "MAE":  _mae(y_eff, pred),
                 "RMSE": _rmse(y_eff, pred),
@@ -83,7 +83,7 @@ def generate_report(cfg: dict) -> None:
     
     # markdown summary
     md = ["# ARS v4.0 — Results Summary\n"]
-    md.append("## Comparison Table (manuscript-comparable + new efficiency endpoint)\n")
+    md.append("## Comparison Table (manuscript-comparable + new product-concentration endpoint)\n")
     md.append(table.to_markdown(index=False, floatfmt=".3f"))
     md.append("\n")
     

@@ -6,7 +6,7 @@ Limitation #6 addressed):
 
     TreeSHAP       on XGBoost (yield) — reference importance ranking
     DeepExplainer  on ARSv4 yield head (P50)
-    KernelExplainer on ARSv4 efficiency head (P50)
+    KernelExplainer on ARSv4 product-concentration head (P50)
 
 For tractability with n_features=16 and n≈316, we compute SHAP on a
 single representative ensemble member rather than on all 250 — ranking
@@ -161,8 +161,8 @@ def run_shap_analysis(cfg: dict, framework: str = "B") -> Dict[str, dict]:
     np.save(shap_dir / "shap_values_ars_yield_p50.npy", sv_ars_y)
     imp_ars_y = _mean_abs(sv_ars_y)
 
-    # ── (3) KernelExplainer on ARSv4 efficiency head P50 ──
-    print("[shap] (3/3) KernelExplainer on ARSv4 efficiency head P50...", flush=True)
+    # ── (3) KernelExplainer on ARSv4 product-concentration head P50 ──
+    print("[shap] (3/3) KernelExplainer on ARSv4 product-concentration head P50...", flush=True)
 
     def eff_predict_numpy(x_np: np.ndarray) -> np.ndarray:
         with torch.no_grad():
@@ -207,7 +207,7 @@ def run_shap_analysis(cfg: dict, framework: str = "B") -> Dict[str, dict]:
               fig_dir / f"shap_bar_treeshap_{framework}.png", cfg["report"]["dpi"])
     _bar_plot(imp_ars_y, feat_names, f"DeepSHAP · ARSv4 yield P50 (Model {framework})",
               fig_dir / f"shap_bar_deepshap_{framework}.png", cfg["report"]["dpi"])
-    _bar_plot(imp_ars_e, feat_names, f"KernelSHAP · ARSv4 efficiency P50 (Model {framework})",
+    _bar_plot(imp_ars_e, feat_names, f"KernelSHAP · ARSv4 product-concentration P50 (Model {framework})",
               fig_dir / f"shap_bar_kernelshap_{framework}.png", cfg["report"]["dpi"])
 
     with open(out_dir / f"shap_summary_{framework}.json", "w") as f:

@@ -155,7 +155,7 @@ def analyze_calibration(cfg: dict) -> Dict[str, dict]:
         )
         reliability_diagram(
             y_eff, eq, quantiles,
-            title=f"Model {fw} · efficiency head reliability",
+            title=f"Model {fw} · product-concentration head reliability",
             out_png=fig_dir / f"reliability_eff_{fw}.png",
             dpi=cfg["report"]["dpi"],
         )

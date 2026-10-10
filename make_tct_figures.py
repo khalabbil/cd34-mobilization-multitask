@@ -63,9 +63,9 @@ def fig1():
     box(2.4, 1.4, 1.8, 1.2, "FT\nembedding", "#EAF7F1", CB["green"])
     box(4.6, 1.2, 2.2, 1.6, "Shared\nresidual\ntrunk", "#EAF3FB", CB["blue"], bold=True)
     box(7.4, 2.35, 2.2, 1.0, "Yield\nquantile head", "#F7EEF4", CB["purple"])
-    box(7.4, 0.65, 2.2, 1.0, "Efficiency\nquantile head", "#F7EEF4", CB["purple"])
+    box(7.4, 0.65, 2.2, 1.0, "Product-conc.\nquantile head", "#F7EEF4", CB["purple"])
     box(10.0, 2.35, 1.8, 1.0, "P10 / P50 / P90\n(yield)", "#FDF3E6", CB["orange"], fs=8)
-    box(10.0, 0.65, 1.8, 1.0, "P10 / P50 / P90\n(efficiency)", "#FDF3E6", CB["orange"], fs=8)
+    box(10.0, 0.65, 1.8, 1.0, "P10 / P50 / P90\n(product conc.)", "#FDF3E6", CB["orange"], fs=8)
     arr(2.0, 2.0, 2.4, 2.0); arr(4.2, 2.0, 4.6, 2.0)
     arr(6.8, 2.2, 7.4, 2.85); arr(6.8, 1.8, 7.4, 1.15)
     arr(9.6, 2.85, 10.0, 2.85); arr(9.6, 1.15, 10.0, 1.15)
@@ -73,7 +73,7 @@ def fig1():
 
 
 # =====================================================================
-# FIGURE 2 — Model B performance, 2 panels (yield, efficiency), 95% CI
+# FIGURE 2 — Model B performance, 2 panels (yield, product concentration), 95% CI
 # =====================================================================
 def fig2():
     models = ["Multi-task\nmodel", "Quantile-\nXGBoost", "XGBoost"]
@@ -81,7 +81,7 @@ def fig2():
     yld = [L["pooled_R2"]["mtl_yield"], L["pooled_R2"]["qxgb_yield"], L["pooled_R2"]["xgb_yield"]]
     eff = [L["pooled_R2"]["mtl_eff"], L["pooled_R2"]["qxgb_eff"], L["pooled_R2"]["xgb_eff"]]
     fig, axes = plt.subplots(1, 2, figsize=(7.2, 3.2))
-    for ax, data, lab in zip(axes, [yld, eff], ["Yield", "Efficiency"]):
+    for ax, data, lab in zip(axes, [yld, eff], ["Yield", "Product concentration"]):
         xs = np.arange(len(models))
         pts = [v[0] for v in data]
         lo = [v[0]-v[1] for v in data]; hi = [v[2]-v[0] for v in data]
@@ -108,7 +108,7 @@ def fig3():
         return [float((yt <= q[:, k]).mean()) for k in range(3)]
     fig, axes = plt.subplots(1, 2, figsize=(7.2, 3.4))
     for ax, yt, mq, qq, lab in [(axes[0], y_yield, mtl_yq, qy, "Yield"),
-                                (axes[1], y_eff, mtl_eq, qe, "Efficiency")]:
+                                (axes[1], y_eff, mtl_eq, qe, "Product concentration")]:
         ax.plot([0, 1], [0, 1], ls="--", lw=0.9, color=CB["grey"], label="Ideal")
         ax.plot(qlev, emp(yt, mq), "o-", color=CB["blue"], ms=6, lw=1.5, label="Multi-task model")
         ax.plot(qlev, emp(yt, qq), "s-", color=CB["orange"], ms=6, lw=1.5, label="Quantile-XGBoost")
@@ -177,11 +177,11 @@ def fig5():
     # worked example
     ax.scatter([65], [2.03], s=120, marker="*", color="white", edgecolors="black",
                linewidths=1.2, zorder=5)
-    ax.annotate("Worked example\n65 kg, eff 2.03 → ~160 mL", xy=(65, 2.03), xytext=(70, 2.7),
+    ax.annotate("Worked example\n65 kg, conc 2.03 → ~160 mL", xy=(65, 2.03), xytext=(70, 2.7),
                 fontsize=7.5, color="white",
                 arrowprops=dict(arrowstyle="->", color="white", lw=1.0))
     ax.set_xlabel("Recipient weight, kg")
-    ax.set_ylabel("Predicted collection efficiency,\n$\\times10^6$ CD34+/mL product")
+    ax.set_ylabel("Predicted product CD34+ concentration,\n$\\times10^6$/mL")
     save(fig, "Figure_5_TCT_nomogram")
 
 

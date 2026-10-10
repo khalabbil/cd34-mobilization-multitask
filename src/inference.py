@@ -4,7 +4,7 @@ src/inference.py
 Donor-level inference + V_needed (volume to reach target dose) calculator.
 
 Loads the saved ensemble from outputs/models/ and produces:
-  - point + 80% PI predictions for yield (×10⁶/kg) and efficiency (×10⁶/mL)
+  - point + 80% PI predictions for yield (×10⁶/kg) and product CD34+ concentration (×10⁶/mL)
   - volume table for a list of target doses
   - "will reach ≥ T/kg" verdict using P10 lower bound
 ═══════════════════════════════════════════════════════════════════════
@@ -57,15 +57,15 @@ def compute_volume_table(
     clip_low: float = 50.0, clip_high: float = 800.0,
 ) -> List[dict]:
     """
-    eff_q : (3,) array of [P10, P50, P90] for efficiency (×10⁶/mL)
+    eff_q : (3,) array of [P10, P50, P90] for product CD34+ concentration (×10⁶/mL)
     Returns volume rows for each target dose T (×10⁶/kg).
     """
     rows = []
     for T in target_doses:
         v_med = T * patient_kg / eff_q[pi_med_idx]
-        # When efficiency is HIGH (eff P90 large) → volume LOW → optimistic
+        # When product concentration is HIGH (eff P90 large) → volume LOW → optimistic
         v_lo  = T * patient_kg / eff_q[pi_high_idx]
-        # When efficiency is LOW (eff P10 small) → volume HIGH → conservative
+        # When product concentration is LOW (eff P10 small) → volume HIGH → conservative
         v_hi  = T * patient_kg / eff_q[pi_low_idx]
         rows.append({
             "target_dose_per_kg": T,
@@ -130,7 +130,7 @@ def format_clinical_report(result: dict, donor_id: str = "Donor") -> str:
     lines.append("")
     lines.append("  YIELD (×10⁶ CD34/kg recipient):")
     lines.append(f"    P50  = {y['P50']:.2f}   PI80 = [{y['P10']:.2f}, {y['P90']:.2f}]")
-    lines.append(f"  EFFICIENCY (×10⁶ CD34/mL product):")
+    lines.append(f"  PRODUCT CD34+ CONCENTRATION (×10⁶/mL product):")
     lines.append(f"    P50  = {e['P50']:.2f}   PI80 = [{e['P10']:.2f}, {e['P90']:.2f}]")
     lines.append("")
     verdict_5 = "✓ YES (P10≥5)" if result["will_reach_5_per_kg"] else "✗ uncertain"
